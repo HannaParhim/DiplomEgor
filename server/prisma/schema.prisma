@@ -1,0 +1,327 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id                       Int              @id @default(autoincrement())
+  name                     String
+  domain                   String?          @unique
+  logo                     String?
+  focusTitle               String?          @map("focus_title")
+  focusDescription         String?          @map("focus_description")
+  directorName             String?          @map("director_name")
+  directorTitle            String?          @map("director_title")
+  directorSignatureUrl     String?          @map("director_signature_url")
+  certificateVerificationKey String?        @map("certificate_verification_key")
+  createdAt                DateTime         @default(now()) @map("created_at")
+  users                    User[]
+  roles                    Role[]
+  departments              Department[]
+  courses                  Course[]
+  chatThreads              ChatThread[]
+  backgroundJobs           BackgroundJob[]
+  auditLogs                AuditLog[]
+  invitations              UserInvitation[]
+
+  @@map("companies")
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  companyId   Int      @map("company_id")
+  name        String
+  permissions String   @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  users       User[]
+
+  @@unique([companyId, name])
+  @@map("roles")
+}
+
+model Department {
+  id        Int    @id @default(autoincrement())
+  companyId Int    @map("company_id")
+  name      String
+  managerId Int?   @map("manager_id")
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  manager   User?   @relation("DepartmentManager", fields: [managerId], references: [id], onDelete: SetNull)
+  members   User[]  @relation("DepartmentMembers")
+
+  @@unique([companyId, name])
+  @@map("departments")
+}
+
+model User {
+  id                  Int                @id @default(autoincrement())
+  companyId           Int                @map("company_id")
+  name                String
+  email               String
+  passwordHash        String             @map("password_hash")
+  roleId              Int                @map("role_id")
+  departmentId        Int?               @map("department_id")
+  position            String?
+  status              String             @default("active")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  company             Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role                Role               @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  department          Department?        @relation("DepartmentMembers", fields: [departmentId], references: [id], onDelete: SetNull)
+  managedDepartments  Department[]       @relation("DepartmentManager")
+  createdCourses      Course[]           @relation("CourseCreator")
+  receivedAssignments CourseAssignment[] @relation("AssignedUser")
+  givenAssignments    CourseAssignment[] @relation("CourseAssigner")
+  progressRecords     Progress[]
+  certificates        Certificate[]
+  createdChatThreads  ChatThread[]       @relation("ChatThreadCreator")
+  assignedChatThreads ChatThread[]       @relation("ChatThreadAssignee")
+  chatParticipants    ChatThreadParticipant[]
+  chatMessages        ChatMessage[]
+  backgroundJobsCreated BackgroundJob[]  @relation("BackgroundJobCreator")
+  auditEntries        AuditLog[]         @relation("AuditLogActor")
+  invitations         UserInvitation[]   @relation("InvitationRecipient")
+  createdInvitations  UserInvitation[]   @relation("InvitationCreator")
+
+  @@unique([companyId, email])
+  @@index([companyId, roleId])
+  @@map("users")
+}
+
+model Course {
+  id           Int                @id @default(autoincrement())
+  companyId    Int                @map("company_id")
+  title        String
+  description  String?
+  createdBy    Int                @map("created_by")
+  status       String             @default("draft")
+  createdAt    DateTime           @default(now()) @map("created_at")
+  company      Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator      User               @relation("CourseCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  modules      CourseModule[]
+  assignments  CourseAssignment[]
+  certificates Certificate[]
+
+  @@index([companyId, status])
+  @@map("courses")
+}
+
+model CourseModule {
+  id         Int      @id @default(autoincrement())
+  courseId   Int      @map("course_id")
+  title      String
+  orderIndex Int      @default(0) @map("order_index")
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons    Lesson[]
+
+  @@unique([courseId, orderIndex])
+  @@map("course_modules")
+}
+
+model Lesson {
+  id              Int          @id @default(autoincrement())
+  moduleId        Int          @map("module_id")
+  title           String
+  content         String?
+  type            String
+  videoUrl        String?      @map("video_url")
+  fileUrl         String?      @map("file_url")
+  orderIndex      Int          @default(0) @map("order_index")
+  module          CourseModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  quiz            Quiz?
+  progressRecords Progress[]
+
+  @@unique([moduleId, orderIndex])
+  @@map("lessons")
+}
+
+model Quiz {
+  id           Int            @id @default(autoincrement())
+  lessonId     Int            @unique @map("lesson_id")
+  title        String
+  passingScore Int            @default(0) @map("passing_score")
+  timeLimit    Int?           @map("time_limit")
+  lesson       Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions    QuizQuestion[]
+
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id       Int          @id @default(autoincrement())
+  quizId   Int          @map("quiz_id")
+  question String
+  type     String
+  quiz     Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers  QuizAnswer[]
+
+  @@map("quiz_questions")
+}
+
+model QuizAnswer {
+  id         Int          @id @default(autoincrement())
+  questionId Int          @map("question_id")
+  answer     String
+  isCorrect  Boolean      @default(false) @map("is_correct")
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_answers")
+}
+
+model CourseAssignment {
+  id         Int      @id @default(autoincrement())
+  courseId   Int      @map("course_id")
+  userId     Int      @map("user_id")
+  assignedBy Int      @map("assigned_by")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  deadline   DateTime?
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user       User     @relation("AssignedUser", fields: [userId], references: [id], onDelete: Cascade)
+  assigner   User     @relation("CourseAssigner", fields: [assignedBy], references: [id], onDelete: Restrict)
+
+  @@unique([courseId, userId])
+  @@index([userId, deadline])
+  @@map("course_assignments")
+}
+
+model Progress {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  lessonId    Int       @map("lesson_id")
+  completed   Boolean   @default(false)
+  completedAt DateTime? @map("completed_at")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson      Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("progress")
+}
+
+model Certificate {
+  id               Int      @id @default(autoincrement())
+  userId           Int      @map("user_id")
+  courseId         Int      @map("course_id")
+  issuedAt         DateTime @default(now()) @map("issued_at")
+  certificateUrl   String?  @map("certificate_url")
+  verificationCode String?  @unique @map("verification_code")
+  signatureDigest  String?  @map("signature_digest")
+  signedByName     String?  @map("signed_by_name")
+  signedByTitle    String?  @map("signed_by_title")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course           Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@map("certificates")
+}
+
+model ChatThread {
+  id           Int                     @id @default(autoincrement())
+  companyId    Int                     @map("company_id")
+  subject      String
+  category     String                  @default("question")
+  status       String                  @default("open")
+  createdById  Int                     @map("created_by")
+  assignedToId Int?                    @map("assigned_to")
+  createdAt    DateTime                @default(now()) @map("created_at")
+  lastMessageAt DateTime               @default(now()) @map("last_message_at")
+  updatedAt    DateTime                @updatedAt @map("updated_at")
+  company      Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator      User                    @relation("ChatThreadCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  assignee     User?                   @relation("ChatThreadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  participants ChatThreadParticipant[]
+  messages     ChatMessage[]
+
+  @@index([companyId, status])
+  @@map("chat_threads")
+}
+
+model ChatThreadParticipant {
+  id         Int        @id @default(autoincrement())
+  threadId   Int        @map("thread_id")
+  userId     Int        @map("user_id")
+  lastReadAt DateTime?  @map("last_read_at")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  thread     ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId])
+  @@index([userId, lastReadAt])
+  @@map("chat_thread_participants")
+}
+
+model ChatMessage {
+  id            Int        @id @default(autoincrement())
+  threadId      Int        @map("thread_id")
+  senderId      Int        @map("sender_id")
+  content       String
+  attachmentUrl String?    @map("attachment_url")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  thread        ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender        User       @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+  @@map("chat_messages")
+}
+
+model BackgroundJob {
+  id           Int       @id @default(autoincrement())
+  companyId    Int?      @map("company_id")
+  type         String
+  status       String    @default("pending")
+  payload      String
+  result       String?
+  errorMessage String?   @map("error_message")
+  attempts     Int       @default(0)
+  availableAt  DateTime  @default(now()) @map("available_at")
+  processedAt  DateTime? @map("processed_at")
+  createdById  Int?      @map("created_by")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  company      Company?  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator      User?     @relation("BackgroundJobCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([status, availableAt])
+  @@index([companyId, type])
+  @@map("background_jobs")
+}
+
+model AuditLog {
+  id         Int       @id @default(autoincrement())
+  companyId  Int       @map("company_id")
+  actorId    Int?      @map("actor_id")
+  action     String
+  entityType String    @map("entity_type")
+  entityId   String?   @map("entity_id")
+  metadata   String    @default("{}")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  actor      User?     @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([companyId, entityType, entityId])
+  @@map("audit_logs")
+}
+
+model UserInvitation {
+  id                Int       @id @default(autoincrement())
+  companyId         Int       @map("company_id")
+  userId            Int       @map("user_id")
+  createdById       Int?      @map("created_by")
+  token             String    @unique
+  status            String    @default("pending")
+  expiresAt         DateTime  @map("expires_at")
+  sentAt            DateTime? @map("sent_at")
+  acceptedAt        DateTime? @map("accepted_at")
+  temporaryPassword String?   @map("temporary_password")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  company           Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user              User      @relation("InvitationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  creator           User?     @relation("InvitationCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([companyId, status])
+  @@index([userId, status])
+  @@map("user_invitations")
+}

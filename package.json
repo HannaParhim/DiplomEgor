@@ -1,0 +1,13 @@
+{
+  "name": "multi-tenant-lms-mvp",
+  "private": true,
+  "scripts": {
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "db:push": "npm --prefix server run prisma:push",
+    "db:seed": "npm --prefix server run seed",
+
+    "build": "npm --prefix client run build",
+    "start": "npm --prefix server run start"
+  }
+}
