@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL ?? "/api";
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 export async function apiRequest(path, { method = "GET", body, token, headers } = {}) {
   const isFormData = body instanceof FormData;
