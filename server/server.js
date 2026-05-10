@@ -9,6 +9,7 @@ initRealtime(server);
 
 bootstrapBackgroundJobs();
 
-server.listen(config.port, () => {
-  console.log(`LMS-сервер запущен на http://localhost:${config.port}`);
+const PORT = process.env.PORT || config.port || 4000;
+server.listen(PORT, () => {
+  console.log(`LMS-сервер запущен на порту ${PORT}`);
 });
