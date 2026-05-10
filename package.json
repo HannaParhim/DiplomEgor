@@ -2,7 +2,6 @@
   "name": "multi-tenant-lms-mvp",
   "private": true,
   "scripts": {
-    "build": "npm --prefix client run build",
     "start": "npm --prefix server run start"
   }
 }
