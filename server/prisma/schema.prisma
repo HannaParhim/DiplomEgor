@@ -3,30 +3,30 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model Company {
-  id                       Int              @id @default(autoincrement())
-  name                     String
-  domain                   String?          @unique
-  logo                     String?
-  focusTitle               String?          @map("focus_title")
-  focusDescription         String?          @map("focus_description")
-  directorName             String?          @map("director_name")
-  directorTitle            String?          @map("director_title")
-  directorSignatureUrl     String?          @map("director_signature_url")
-  certificateVerificationKey String?        @map("certificate_verification_key")
-  createdAt                DateTime         @default(now()) @map("created_at")
-  users                    User[]
-  roles                    Role[]
-  departments              Department[]
-  courses                  Course[]
-  chatThreads              ChatThread[]
-  backgroundJobs           BackgroundJob[]
-  auditLogs                AuditLog[]
-  invitations              UserInvitation[]
+  id                         Int              @id @default(autoincrement())
+  name                       String
+  domain                     String?          @unique
+  logo                       String?
+  focusTitle                 String?          @map("focus_title")
+  focusDescription           String?          @map("focus_description")
+  directorName               String?          @map("director_name")
+  directorTitle              String?          @map("director_title")
+  directorSignatureUrl       String?          @map("director_signature_url")
+  certificateVerificationKey String?          @map("certificate_verification_key")
+  createdAt                  DateTime         @default(now()) @map("created_at")
+  users                      User[]
+  roles                      Role[]
+  departments                Department[]
+  courses                    Course[]
+  chatThreads                ChatThread[]
+  backgroundJobs             BackgroundJob[]
+  auditLogs                  AuditLog[]
+  invitations                UserInvitation[]
 
   @@map("companies")
 }
@@ -45,10 +45,10 @@ model Role {
 }
 
 model Department {
-  id        Int    @id @default(autoincrement())
-  companyId Int    @map("company_id")
+  id        Int     @id @default(autoincrement())
+  companyId Int     @map("company_id")
   name      String
-  managerId Int?   @map("manager_id")
+  managerId Int?    @map("manager_id")
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   manager   User?   @relation("DepartmentManager", fields: [managerId], references: [id], onDelete: SetNull)
   members   User[]  @relation("DepartmentMembers")
@@ -58,33 +58,33 @@ model Department {
 }
 
 model User {
-  id                  Int                @id @default(autoincrement())
-  companyId           Int                @map("company_id")
-  name                String
-  email               String
-  passwordHash        String             @map("password_hash")
-  roleId              Int                @map("role_id")
-  departmentId        Int?               @map("department_id")
-  position            String?
-  status              String             @default("active")
-  createdAt           DateTime           @default(now()) @map("created_at")
-  company             Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  role                Role               @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  department          Department?        @relation("DepartmentMembers", fields: [departmentId], references: [id], onDelete: SetNull)
-  managedDepartments  Department[]       @relation("DepartmentManager")
-  createdCourses      Course[]           @relation("CourseCreator")
-  receivedAssignments CourseAssignment[] @relation("AssignedUser")
-  givenAssignments    CourseAssignment[] @relation("CourseAssigner")
-  progressRecords     Progress[]
-  certificates        Certificate[]
-  createdChatThreads  ChatThread[]       @relation("ChatThreadCreator")
-  assignedChatThreads ChatThread[]       @relation("ChatThreadAssignee")
-  chatParticipants    ChatThreadParticipant[]
-  chatMessages        ChatMessage[]
-  backgroundJobsCreated BackgroundJob[]  @relation("BackgroundJobCreator")
-  auditEntries        AuditLog[]         @relation("AuditLogActor")
-  invitations         UserInvitation[]   @relation("InvitationRecipient")
-  createdInvitations  UserInvitation[]   @relation("InvitationCreator")
+  id                    Int                     @id @default(autoincrement())
+  companyId             Int                     @map("company_id")
+  name                  String
+  email                 String
+  passwordHash          String                  @map("password_hash")
+  roleId                Int                     @map("role_id")
+  departmentId          Int?                    @map("department_id")
+  position              String?
+  status                String                  @default("active")
+  createdAt             DateTime                @default(now()) @map("created_at")
+  company               Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role                  Role                    @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  department            Department?             @relation("DepartmentMembers", fields: [departmentId], references: [id], onDelete: SetNull)
+  managedDepartments    Department[]            @relation("DepartmentManager")
+  createdCourses        Course[]                @relation("CourseCreator")
+  receivedAssignments   CourseAssignment[]      @relation("AssignedUser")
+  givenAssignments      CourseAssignment[]      @relation("CourseAssigner")
+  progressRecords       Progress[]
+  certificates          Certificate[]
+  createdChatThreads    ChatThread[]            @relation("ChatThreadCreator")
+  assignedChatThreads   ChatThread[]            @relation("ChatThreadAssignee")
+  chatParticipants      ChatThreadParticipant[]
+  chatMessages          ChatMessage[]
+  backgroundJobsCreated BackgroundJob[]         @relation("BackgroundJobCreator")
+  auditEntries          AuditLog[]              @relation("AuditLogActor")
+  invitations           UserInvitation[]        @relation("InvitationRecipient")
+  createdInvitations    UserInvitation[]        @relation("InvitationCreator")
 
   @@unique([companyId, email])
   @@index([companyId, roleId])
@@ -172,15 +172,15 @@ model QuizAnswer {
 }
 
 model CourseAssignment {
-  id         Int      @id @default(autoincrement())
-  courseId   Int      @map("course_id")
-  userId     Int      @map("user_id")
-  assignedBy Int      @map("assigned_by")
-  assignedAt DateTime @default(now()) @map("assigned_at")
+  id         Int       @id @default(autoincrement())
+  courseId   Int       @map("course_id")
+  userId     Int       @map("user_id")
+  assignedBy Int       @map("assigned_by")
+  assignedAt DateTime  @default(now()) @map("assigned_at")
   deadline   DateTime?
-  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  user       User     @relation("AssignedUser", fields: [userId], references: [id], onDelete: Cascade)
-  assigner   User     @relation("CourseAssigner", fields: [assignedBy], references: [id], onDelete: Restrict)
+  course     Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user       User      @relation("AssignedUser", fields: [userId], references: [id], onDelete: Cascade)
+  assigner   User      @relation("CourseAssigner", fields: [assignedBy], references: [id], onDelete: Restrict)
 
   @@unique([courseId, userId])
   @@index([userId, deadline])
@@ -218,21 +218,21 @@ model Certificate {
 }
 
 model ChatThread {
-  id           Int                     @id @default(autoincrement())
-  companyId    Int                     @map("company_id")
-  subject      String
-  category     String                  @default("question")
-  status       String                  @default("open")
-  createdById  Int                     @map("created_by")
-  assignedToId Int?                    @map("assigned_to")
-  createdAt    DateTime                @default(now()) @map("created_at")
-  lastMessageAt DateTime               @default(now()) @map("last_message_at")
-  updatedAt    DateTime                @updatedAt @map("updated_at")
-  company      Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  creator      User                    @relation("ChatThreadCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  assignee     User?                   @relation("ChatThreadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
-  participants ChatThreadParticipant[]
-  messages     ChatMessage[]
+  id            Int                     @id @default(autoincrement())
+  companyId     Int                     @map("company_id")
+  subject       String
+  category      String                  @default("question")
+  status        String                  @default("open")
+  createdById   Int                     @map("created_by")
+  assignedToId  Int?                    @map("assigned_to")
+  createdAt     DateTime                @default(now()) @map("created_at")
+  lastMessageAt DateTime                @default(now()) @map("last_message_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
+  company       Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator       User                    @relation("ChatThreadCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  assignee      User?                   @relation("ChatThreadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  participants  ChatThreadParticipant[]
+  messages      ChatMessage[]
 
   @@index([companyId, status])
   @@map("chat_threads")
@@ -289,16 +289,16 @@ model BackgroundJob {
 }
 
 model AuditLog {
-  id         Int       @id @default(autoincrement())
-  companyId  Int       @map("company_id")
-  actorId    Int?      @map("actor_id")
+  id         Int      @id @default(autoincrement())
+  companyId  Int      @map("company_id")
+  actorId    Int?     @map("actor_id")
   action     String
-  entityType String    @map("entity_type")
-  entityId   String?   @map("entity_id")
-  metadata   String    @default("{}")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  actor      User?     @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  metadata   String   @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at")
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  actor      User?    @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([companyId, createdAt])
   @@index([companyId, entityType, entityId])
