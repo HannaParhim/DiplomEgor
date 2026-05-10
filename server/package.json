@@ -4,9 +4,6 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build:client": "cd client && npm install --include=dev && npm run build",
-    "build:server": "cd server && npm install",
-    "postinstall": "npm run build:client && npm run build:server && cd server && npx prisma db push",
     "start": "node server.js",
     "dev": "cd server && nodemon server.js"
   },
